@@ -53,10 +53,19 @@ app:
     retry-delay-ms: 100
 
 server:
-  port: 8080
+  port: ${PORT:8080}
   error:
     include-message: always
     include-binding-errors: always
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
 
 logging:
   level:

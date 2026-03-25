@@ -1,0 +1,65 @@
+name: Deploy to AWS ECS
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: # allow manual trigger from GitHub UI
+
+env:
+  AWS_REGION:     af-south-1
+  ECR_REPOSITORY: swiftcart
+  ECS_CLUSTER:    swiftcart-cluster
+  ECS_SERVICE:    swiftcart-service
+
+jobs:
+  deploy:
+    name: Build, push, and deploy
+    runs-on: ubuntu-latest
+
+    # Only run after CI passes
+    needs: []
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region:            ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push Docker image to ECR
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to:   type=gha,mode=max
+
+      - name: Force ECS service redeployment
+        run: |
+          aws ecs update-service \
+            --cluster  ${{ env.ECS_CLUSTER }} \
+            --service  ${{ env.ECS_SERVICE }} \
+            --force-new-deployment
+
+      - name: Wait for deployment to stabilise
+        run: |
+          aws ecs wait services-stable \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services ${{ env.ECS_SERVICE }}
+
+      - name: Deployment complete
+        run: echo "Deployed ${{ github.sha }} to ECS successfully"
