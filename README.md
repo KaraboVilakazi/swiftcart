@@ -4,11 +4,29 @@
 
 ![CI](https://github.com/KaraboVilakazi/swiftcart/actions/workflows/ci.yml/badge.svg) ![Java](https://img.shields.io/badge/Java-17-orange?logo=java) ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2-green?logo=springboot) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue?logo=postgresql) ![Redis](https://img.shields.io/badge/Redis-7-red?logo=redis) ![Docker](https://img.shields.io/badge/Docker-Compose-blue?logo=docker) ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
+**Live API:** https://swiftcart-production-d91a.up.railway.app
+
 ---
 
 ## 📖 About
 
 SwiftCart is a modular, scalable e-commerce backend API demonstrating enterprise-grade software engineering principles. It handles the full shopping lifecycle — browsing products, managing a cart, placing orders, and tracking inventory — with production concerns like concurrency control, caching, event-driven design, and failure handling built in from the start.
+
+---
+
+## ☁️ Deployment
+
+SwiftCart is deployed on [Railway](https://railway.app) with PostgreSQL and Redis running as managed services in the same private network.
+
+![Railway deployment showing Postgres Online, Redis Online, and SwiftCart Online](screenshots/railway-deployment.png)
+
+| Service | Status |
+|---|---|
+| SwiftCart API | Railway (Europe West) — 1 Replica |
+| PostgreSQL | Railway managed — persistent volume |
+| Redis | Railway managed — persistent volume |
+
+The app connects to both services via Railway's internal private network (`*.railway.internal`) — no public database exposure.
 
 ---
 
