@@ -1,57 +1,35 @@
+<div align="center">
+
 # 🛒 SwiftCart
 
-> Production-quality e-commerce backend built with Java 17, Spring Boot, PostgreSQL, Redis and Docker.
+**Production-grade e-commerce backend — built for concurrency, built for scale.**
 
-![CI](https://github.com/KaraboVilakazi/swiftcart/actions/workflows/ci.yml/badge.svg) ![Java](https://img.shields.io/badge/Java-17-orange?logo=java) ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2-green?logo=springboot) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue?logo=postgresql) ![Redis](https://img.shields.io/badge/Redis-7-red?logo=redis) ![Docker](https://img.shields.io/badge/Docker-Compose-blue?logo=docker) ![License](https://img.shields.io/badge/license-MIT-lightgrey)
+[![Java](https://img.shields.io/badge/Java_17-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)](https://www.java.com)
+[![Spring Boot](https://img.shields.io/badge/Spring_Boot_3.2-6DB33F?style=for-the-badge&logo=spring-boot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL_16-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org)
+[![Redis](https://img.shields.io/badge/Redis_7-DC382D?style=for-the-badge&logo=redis&logoColor=white)](https://redis.io)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com)
+[![Railway](https://img.shields.io/badge/Deployed_on_Railway-0B0D0E?style=for-the-badge&logo=railway&logoColor=white)](https://railway.app)
 
-**Live API:** https://swiftcart-production-d91a.up.railway.app
+*SwiftCart handles the full shopping lifecycle — product browsing, cart management, order placement, and inventory tracking — with production concerns baked in from day one.*
 
----
-
-## 📖 About
-
-SwiftCart is a modular, scalable e-commerce backend API demonstrating enterprise-grade software engineering principles. It handles the full shopping lifecycle — browsing products, managing a cart, placing orders, and tracking inventory — with production concerns like concurrency control, caching, event-driven design, and failure handling built in from the start.
-
----
-
-## ☁️ Deployment
-
-SwiftCart is deployed on [Railway](https://railway.app) with PostgreSQL and Redis running as managed services in the same private network.
-
-![Railway deployment showing Postgres Online, Redis Online, and SwiftCart Online](screenshots/railway-deployment.png)
-
-| Service | Status |
-|---|---|
-| SwiftCart API | Railway (Europe West) — 1 Replica |
-| PostgreSQL | Railway managed — persistent volume |
-| Redis | Railway managed — persistent volume |
-
-The app connects to both services via Railway's internal private network (`*.railway.internal`) — no public database exposure.
+</div>
 
 ---
 
-## ✅ Live API Response
+## ⚡ Engineering Highlights
 
-```json
-{
-  "success": true,
-  "message": "Success",
-  "data": {
-    "content": [
-      {
-        "id": 1,
-        "name": "Samsung Galaxy S24",
-        "slug": "samsung-galaxy-s24",
-        "price": 18999,
-        "categoryName": "Smartphones",
-        "active": true
-      }
-    ],
-    "totalElements": 6,
-    "totalPages": 1
-  }
-}
-```
+### Optimistic Locking — No Overselling
+Two users checkout the same last item simultaneously. SwiftCart handles this with JPA's `@Version` field — the second writer receives an `OptimisticLockException`, the service retries up to 3 times, and returns a conflict status if stock is gone. No race conditions, no overselling.
+
+### Event-Driven Order Workflow
+`OrderService` publishes an `OrderCreatedEvent` via Spring's `ApplicationEventPublisher`. Async listeners handle downstream concerns without blocking the order response. Stock is deducted before order persistence — if any item fails, previously deducted quantities are explicitly rolled back.
+
+### Redis Caching with Intent
+Individual product lookups cache with a 10-minute TTL. Paginated listings intentionally skip caching — too many key combinations, serialization overhead not worth it. Caching is applied where it helps, not everywhere.
+
+### Price Snapshotting
+Price changes to a product never retroactively affect existing carts or historical orders. Cart items store a `snapshotPrice` at time of add. Your order history is immutable.
 
 ---
 
@@ -59,45 +37,36 @@ The app connects to both services via Railway's internal private network (`*.rai
 
 ```
 src/main/java/com/swiftcart/
-├── config/               JWT filter, Spring Security, Redis config
-├── common/               BaseEntity, ApiResponse envelope, exceptions
-├── user/                 Registration, login, JWT auth, profile
-├── product/              Product CRUD, categories, Redis caching
-├── inventory/            Stock tracking, optimistic locking
-├── cart/                 Cart management, price snapshotting
-└── order/                Order placement, rollback, event publishing
-```
-
-### Layered Design (per module)
-
-```
-Controller  →  Service  →  Repository  →  Database
-   (API)    (Business)    (Data Access)
+├── config/         # JWT, Security, Redis configuration
+├── common/         # BaseEntity, ApiResponse wrappers
+├── user/           # Registration, login, JWT issuance
+├── product/        # CRUD, Redis caching layer
+├── inventory/      # Stock tracking, optimistic lock handling
+├── cart/           # Cart management, price snapshotting
+└── order/          # Order placement, event publishing, rollback
 ```
 
 ---
 
-## ⚙️ Tech Stack
+## 🛠️ Tech Stack
 
 | Layer | Technology |
 |---|---|
 | Language | Java 17 |
 | Framework | Spring Boot 3.2 |
-| Security | Spring Security + JWT (JJWT) |
 | Database | PostgreSQL 16 |
-| Caching | Redis 7 |
+| Cache | Redis 7 |
+| Auth | Spring Security + JWT (JJWT) |
 | Migrations | Flyway |
-| Containerisation | Docker + Docker Compose |
-| Build | Maven |
+| Containers | Docker & Docker Compose |
+| Infra-as-code | Terraform |
+| Deployment | Railway |
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Running Locally
 
-### Prerequisites
-- Docker Desktop
-
-### Run
+Only Docker Desktop required.
 
 ```bash
 git clone https://github.com/KaraboVilakazi/swiftcart.git
@@ -105,173 +74,25 @@ cd swiftcart
 docker compose up --build
 ```
 
-API is available at **`http://localhost:8081`**
-
-> PostgreSQL runs on `localhost:5433` and Redis on `localhost:6379`
+API available at `http://localhost:8081`. A Postman collection is included for testing all endpoints.
 
 ---
 
-## 📡 API Reference
+## 📡 Key Endpoints
 
-### Auth
-
-```bash
-# Register
-POST /api/v1/auth/register
-{
-  "email": "you@example.com",
-  "password": "Password1",
-  "firstName": "Karabo",
-  "lastName": "V"
-}
-
-# Login → returns JWT token
-POST /api/v1/auth/login
-{
-  "email": "you@example.com",
-  "password": "Password1"
-}
-```
-
-### Products *(public)*
-
-```bash
-GET  /api/v1/products                    # paginated list
-GET  /api/v1/products/{id}               # single product (Redis cached)
-GET  /api/v1/products/search?q=samsung   # search by name
-GET  /api/v1/products/category/{id}      # filter by category
-```
-
-### Cart *(requires JWT)*
-
-```bash
-GET    /api/v1/cart
-POST   /api/v1/cart/items?productId=1&quantity=2
-PUT    /api/v1/cart/items/{productId}?quantity=3
-DELETE /api/v1/cart/items/{productId}
-```
-
-### Orders *(requires JWT)*
-
-```bash
-POST /api/v1/orders
-{ "shippingAddress": "123 Sandton Drive, Johannesburg" }
-
-GET  /api/v1/orders          # order history
-GET  /api/v1/orders/{id}     # order detail
-```
-
-### Inventory *(admin)*
-
-```bash
-GET  /api/v1/inventory/{productId}
-POST /api/v1/inventory/{productId}/restock?quantity=50
-```
-
-All responses follow the same envelope:
-
-```json
-{ "success": true, "message": "...", "data": { ... }, "timestamp": "..." }
-```
-
----
-
-## 🔐 Authentication
-
-Include the JWT token from login in the `Authorization` header:
-
-```
-Authorization: Bearer <your_token>
-```
-
-A seeded admin account is available:
-- **Email:** `admin@swiftcart.co.za`
-- **Password:** `Admin@123`
-
----
-
-## 🧠 Engineering Decisions
-
-### Concurrency & Overselling Prevention
-The `Inventory` entity uses JPA `@Version` (optimistic locking). When two users order the same product simultaneously, the second writer receives an `OptimisticLockException`. The service retries up to 3 times before returning a `409 Conflict`. No DB row locks are held between retries, keeping throughput high.
-
-```
-Thread A: reads qty=10, version=5  →  UPDATE ... WHERE version=5  ✅ succeeds
-Thread B: reads qty=10, version=5  →  UPDATE ... WHERE version=5  ❌ 0 rows → retry
-```
-
-### Order Placement & Rollback
-Stock is deducted **before** the order is persisted. If any line item fails (insufficient stock, DB error), all previously deducted items are rolled back explicitly. This prevents confirmed orders with no reserved stock.
-
-### Event-Driven Design
-`OrderService` publishes an `OrderCreatedEvent` via Spring's `ApplicationEventPublisher`. Listeners handle notifications and dispatch queuing asynchronously (`@Async`), so the API response returns immediately. The publisher can be swapped to Kafka/RabbitMQ without touching `OrderService`.
-
-### Redis Caching
-Individual products (`/products/{id}`) are cached with a 10-minute TTL. Cache is evicted on any product write. Paginated listings are intentionally **not** cached — `PageImpl` is not safely serialisable in Redis and the combinatorial key space makes it impractical.
-
-### Flyway Migrations
-`spring.jpa.hibernate.ddl-auto: validate` — Flyway owns the schema, JPA only validates against it. This prevents silent schema drift in production.
-
-### Price Snapshotting
-`CartItem.unitPrice` and `OrderItem.unitPrice` are snapshotted at the moment of action. Price changes to a product never retroactively affect carts or historical orders.
-
----
-
-## 🗄️ Database Schema
-
-```
-users          — id, email, password_hash, role
-categories     — id, name, slug, parent_id (self-referential)
-products       — id, name, slug, price, category_id, active
-inventory      — id, product_id, quantity, version (optimistic lock)
-carts          — id, user_id
-cart_items     — id, cart_id, product_id, quantity, unit_price
-orders         — id, user_id, status, total_amount
-order_items    — id, order_id, product_id, quantity, unit_price
-```
-
----
-
-## 📁 Project Structure
-
-```
-swiftcart/
-├── Dockerfile
-├── docker-compose.yml
-├── pom.xml
-└── src/main/
-    ├── resources/
-    │   ├── application.yml
-    │   └── db/migration/
-    │       ├── V1__init_schema.sql
-    │       └── V2__seed_data.sql
-    └── java/com/swiftcart/
-        ├── SwiftCartApplication.java
-        ├── config/
-        │   ├── JwtService.java
-        │   ├── JwtAuthFilter.java
-        │   ├── JwtProperties.java
-        │   ├── SecurityConfig.java
-        │   └── RedisConfig.java
-        ├── common/
-        │   ├── domain/BaseEntity.java
-        │   ├── response/ApiResponse.java
-        │   └── exception/
-        ├── user/
-        ├── product/
-        ├── inventory/
-        ├── cart/
-        └── order/
-```
-
----
-
-## 📋 Requirements
-
-- Docker Desktop (no local Java or Maven needed)
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/auth/register` | Register a new user |
+| `POST` | `/api/auth/login` | Authenticate, receive JWT |
+| `GET` | `/api/products` | Browse products (paginated) |
+| `GET` | `/api/products/{id}` | Get product (Redis cached) |
+| `POST` | `/api/cart/add` | Add item to cart |
+| `GET` | `/api/cart` | View cart |
+| `POST` | `/api/orders` | Place order (with concurrency control) |
+| `GET` | `/api/orders` | Order history |
 
 ---
 
 ## 📄 License
 
-MIT — build on it, extend it, ship it.
+MIT
