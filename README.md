@@ -64,6 +64,14 @@ src/main/java/com/swiftcart/
 
 ---
 
+## ☁️ Deployment
+
+SwiftCart is deployed on Railway with Postgres and Redis running as managed services.
+
+![Railway deployment — SwiftCart, Postgres, and Redis all online](screenshots/railway-deployment.png)
+
+---
+
 ## 🚀 Running Locally
 
 Only Docker Desktop required.
