@@ -157,16 +157,14 @@ class ConcurrentInventoryIntegrationTest {
     void rollbackStock_exactlyRestoresQuantity() {
         int quantityBefore = inventoryRepository.findByProductId(productId)
                 .map(Inventory::getQuantity)
-                .orElseThrow()
-                .getQuantity();
+                .orElseThrow();
 
         inventoryService.deductStock(productId, 3);
         inventoryService.rollbackStock(productId, 3);
 
         int quantityAfter = inventoryRepository.findByProductId(productId)
                 .map(Inventory::getQuantity)
-                .orElseThrow()
-                .getQuantity();
+                .orElseThrow();
 
         assertThat(quantityAfter)
                 .as("Rollback must exactly restore the quantity deducted")
